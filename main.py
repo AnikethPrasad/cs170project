@@ -9,8 +9,6 @@ def solve(G: nx.Graph):
         G.nodes[i]['team'] = random.randint(1,8)
     
 
-
-
 G = read_input('./inputs/small1.in')
 print(G.nodes[0])
 solve(G)
@@ -24,3 +22,16 @@ run(solve, './inputs/small1.in', 'small1.out', overwrite=True)
 #Run all cases
 # run_all(solve, 'input', 'output')
 # tar('output')
+
+   
+'''
+Ideas:
+
+    Algorithm:
+    1. Preprocess (sort by # of neighbors, edge weight) + Add node by node with greedy approach, assign current node to best possible team. O(V^2)
+    2. Generate team assignments (randomly or w/greedy?), move nodes until satisfied.
+    3. f(nodes) nodes = list of nodes        min_cost(for i in range(len(nodes)): f(nodes \ {i}))
+    4. divide n concor?
+    5. multiplicative weights with multiple algorithms 😮
+
+'''
