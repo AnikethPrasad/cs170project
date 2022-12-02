@@ -20,31 +20,38 @@ def new_cp(G: nx.graph, b, old_team, new_team, return_b=False):
 
 def new_cw(G, u, old_team, new_team):
     global cw
+    temp = cw
     for node, info in G.adj[u].items():
         if G.nodes[node]['team'] == old_team:
-            cw = cw - info['weight']
+            temp = temp - info['weight']
         elif G.nodes[node]['team'] == new_team:
-            cw = cw + info['weight']
-            
-def updated_cost(G: nx.graph, node, new_team):
+            temp = temp + info['weight']
+    return temp       
+    
+def updated_cost(G: nx.graph, node, new_team, separated=False):
     global cw, ck, cp
     old_team = G.nodes[node]['team']
     output = [G.nodes[v]['team'] for v in range(G.number_of_nodes())]
     teams, counts = np.unique(output, return_counts=True)
     k = np.max(teams)
     b_vec = (counts / G.number_of_nodes()) - 1 / k
-    new_cw(G, node, old_team, new_team)
+    temp_cw = new_cw(G, node, old_team, new_team)
     new_cp(G, b_vec, old_team, new_team)
-    return cw + ck + cp
+    if separated:
+        return temp_cw, ck, cp
+    return temp_cw, temp_cw + ck + cp
 
 
-def getSortedEdgeWeightAverage(G) -> dict:
-    
+def getSortedEdgeWeightSum(G) -> dict:
     node_edge_weight_sums = {}
     for i in range(G.number_of_nodes()):
         node_edge_weight_sums[i] = sum(e[1] for e in G.edges(i))
     s = sorted(node_edge_weight_sums, key=lambda x:node_edge_weight_sums[x])
     return s
+
+def build_graph(G: nx.Graph, team_size: int = 10):
+    n = getSortedEdgeWeightSum(G)
+    
 
 
 def solve(G: nx.Graph):
@@ -53,7 +60,7 @@ def solve(G: nx.Graph):
     # Access the team of v with team_id = G.nodes[v]['team']
     # sorted_nodes = getSortedEdgeWeightAverage(G)
     # print(sorted_nodes)
-    TEAM_SIZE = 10
+    TEAM_SIZE = 11
     global cw, ck, cp
     for i in range(G.number_of_nodes()):
         G.nodes[i]['team'] = random.randint(1,TEAM_SIZE+1)
@@ -61,7 +68,7 @@ def solve(G: nx.Graph):
     cw, ck, cp = score(G, separated=True)
     curr_cost = score(G)
     
-    print("INIT",curr_cost)
+    print("INIT",curr_cost, cw)
     prev_cost = float('inf')
     best_node = -1
     best_team = -1
@@ -72,16 +79,18 @@ def solve(G: nx.Graph):
             for t in range(1,TEAM_SIZE+1):
                 if G.nodes[n]['team'] == t:
                     continue
-                new_cost = updated_cost(G,n,t)
+                curr_cw, new_cost = updated_cost(G,n,t)
                 if new_cost < curr_cost:
                     curr_cost = new_cost
                     best_node = n
                     best_team = t
-                curr_cost = min(curr_cost, updated_cost(G, n, t))
+                    best_cw = curr_cw
         G.nodes[best_node]["team"] = best_team
+        cw = best_cw
     print("FINAL",score(G))
 
 G = read_input('./inputs/small1.in')
+# build_graph(G)
 print(G.nodes[0])
 solve(G)
 validate_output(G)
